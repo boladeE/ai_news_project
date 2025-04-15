@@ -34,10 +34,6 @@ wheels/
 *.swp
 *.swo
 
-# Data directories
-data/raw_news/
-data/processed_news/
-
 # Logs
 *.log
 

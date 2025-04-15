@@ -19,10 +19,10 @@ PINECONE_INDEX_NAME = os.getenv("PINECONE_INDEX_NAME", "news-articles")
 
 # News Sources
 RSS_FEEDS = [
-    "https://feeds.feedburner.com/TechCrunch/",
+    # "https://feeds.feedburner.com/TechCrunch/",
     # "https://www.theverge.com/rss/index.xml",
-    # "https://www.wired.com/feed/rss",
-    # "https://www.technologyreview.com/feed/",
+    "https://www.wired.com/feed/rss",
+    "https://www.technologyreview.com/feed/",
 ]
 
 # Vector Database Settings
