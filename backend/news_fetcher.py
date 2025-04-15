@@ -174,5 +174,3 @@ class NewsFetcher:
         logger.info("News processing pipeline completed with status: %s", result["status"])
         return result
 
-news_fetcher = NewsFetcher()
-print(news_fetcher.process())

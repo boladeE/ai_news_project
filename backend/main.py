@@ -1,5 +1,7 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.templating import Jinja2Templates
+from fastapi.responses import HTMLResponse
 from typing import List, Dict, Any
 import json
 import os
@@ -11,6 +13,19 @@ from recommender import NewsRecommender
 from config import RAW_NEWS_DIR, PROCESSED_NEWS_DIR
 
 app = FastAPI(title="DS Task AI News API")
+
+# Configure templates
+templates = Jinja2Templates(directory="backend/templates")
+
+# Add custom filters
+def from_json(value):
+    """Parse a JSON string into a Python object."""
+    try:
+        return json.loads(value)
+    except (json.JSONDecodeError, TypeError):
+        return None
+
+templates.env.filters["from_json"] = from_json
 
 # Add CORS middleware
 app.add_middleware(
@@ -27,34 +42,51 @@ embedding_generator = EmbeddingGenerator()
 vector_store = VectorStore()
 recommender = NewsRecommender()
 
-@app.get("/")
-async def root():
-    """Root endpoint returning API information."""
-    return {
-        "name": "DS Task AI News API",
-        "version": "1.0.0",
-        "description": "AI-powered news retrieval and recommendation system"
-    }
+@app.get("/", response_class=HTMLResponse)
+async def root(request: Request):
+    """Root endpoint returning the home page with links to other routes."""
+    return templates.TemplateResponse(
+        "home.html",
+        {"request": request}
+    )
 
-@app.get("/fetch-news")
-async def fetch_news():
+@app.get("/fetch-news", response_class=HTMLResponse)
+async def fetch_news(request: Request):
     """Fetch news from RSS feeds and store in vector database."""
     try:
         result = news_fetcher.process()
         if result["status"] == "error":
             raise HTTPException(status_code=404, detail=result["message"])
         
-        return result
+        # Get the latest processed articles
+        processed_files = sorted(os.listdir(PROCESSED_NEWS_DIR), reverse=True)
+        if not processed_files:
+            raise HTTPException(status_code=404, detail="No processed articles found")
+        
+        latest_file = os.path.join(PROCESSED_NEWS_DIR, processed_files[0])
+        with open(latest_file, 'r', encoding='utf-8') as f:
+            articles = json.load(f)
+            
+        # Ensure each article has a link
+        for article in articles:
+            if 'link' not in article or not article['link']:
+                # If no link is available, use the article ID as a fallback
+                article['link'] = f"/article/{article.get('id', '')}"
+        
+        return templates.TemplateResponse(
+            "news.html",
+            {"request": request, "articles": articles}
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/recommend-news")
-async def recommend_news(article_id: str = None, query: str = None):
+@app.get("/recommend-news", response_class=HTMLResponse)
+async def recommend_news(request: Request, article_id: str = None, query: str = None):
     """Get news recommendations based on article ID or search query."""
     try:
         if article_id:
             # Get article from vector store
-            article = vector_store.search_similar([0] * 4096, top_k=1)  # Placeholder vector
+            article = vector_store.search_similar([0] * 1024, top_k=1)  # Placeholder vector with correct dimension
             if not article:
                 raise HTTPException(status_code=404, detail="Article not found")
             
@@ -76,13 +108,23 @@ async def recommend_news(article_id: str = None, query: str = None):
         if not similar_articles:
             raise HTTPException(status_code=404, detail="No similar articles found")
 
+        # Ensure each article has a link
+        for article in similar_articles:
+            if 'link' not in article or not article['link']:
+                # If no link is available, use the article ID as a fallback
+                article['link'] = f"/article/{article.get('id', '')}"
+
         # Generate insights for the articles
         insights = recommender.analyze_articles(similar_articles)
 
-        return {
-            "articles": similar_articles,
-            "insights": insights
-        }
+        return templates.TemplateResponse(
+            "recommendations.html",
+            {
+                "request": request,
+                "articles": similar_articles,
+                "insights": insights
+            }
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -91,11 +133,16 @@ async def get_article(article_id: str):
     """Get a specific article and its summary."""
     try:
         # Search for the article
-        articles = vector_store.search_similar([0] * 4096, top_k=1)  # Placeholder vector
+        articles = vector_store.search_similar([0] * 1024, top_k=1)  # Placeholder vector with correct dimension
         if not articles:
             raise HTTPException(status_code=404, detail="Article not found")
 
         article = articles[0]
+        
+        # Ensure the article has a link
+        if 'link' not in article or not article['link']:
+            # If no link is available, use the article ID as a fallback
+            article['link'] = f"/article/{article.get('id', '')}"
         
         # Generate summary
         summary = recommender.generate_summary(article)
@@ -109,4 +156,4 @@ async def get_article(article_id: str):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="localhost", port=8000)

@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}Home - DS Task AI News{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="text-center mb-12">
+        <h1 class="text-4xl font-bold text-gray-800 mb-4">Welcome to DS Task AI News</h1>
+        <p class="text-xl text-gray-600">Your AI-powered news retrieval and recommendation system</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <!-- Fetch News Card -->
+        <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">
+            <div class="p-6">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-4">Latest News</h2>
+                <p class="text-gray-600 mb-6">View the latest news articles fetched from our RSS feeds.</p>
+                <a href="/fetch-news" class="inline-block bg-blue-600 text-white px-6 py-3 rounded-md font-medium hover:bg-blue-700 transition-colors duration-300">
+                    View Latest News
+                </a>
+            </div>
+        </div>
+
+        <!-- Recommend News Card -->
+        <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">
+            <div class="p-6">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-4">News Recommendations</h2>
+                <p class="text-gray-600 mb-6">Get personalized news recommendations based on your interests.</p>
+                <div class="space-y-4">
+                    <a href="/recommend-news?query=technology" class="block bg-blue-600 text-white px-6 py-3 rounded-md font-medium hover:bg-blue-700 transition-colors duration-300 text-center">
+                        Technology News
+                    </a>
+                    <a href="/recommend-news?query=artificial intelligence" class="block bg-blue-600 text-white px-6 py-3 rounded-md font-medium hover:bg-blue-700 transition-colors duration-300 text-center">
+                        AI News
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-12 bg-white rounded-lg shadow-md p-6">
+        <h2 class="text-2xl font-semibold text-gray-800 mb-4">About This Application</h2>
+        <p class="text-gray-600 mb-4">
+            This application uses AI to fetch, process, and recommend news articles. It leverages:
+        </p>
+        <ul class="list-disc list-inside text-gray-600 space-y-2">
+            <li>RSS feeds for news collection</li>
+            <li>Cohere embeddings for semantic understanding</li>
+            <li>Pinecone vector database for efficient retrieval</li>
+            <li>AI-powered analysis for personalized recommendations</li>
+        </ul>
+    </div>
+</div>
+{% endblock %} 

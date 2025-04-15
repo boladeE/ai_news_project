@@ -1,6 +1,7 @@
 from groq import Groq
 from typing import List, Dict, Any
 from config import GROQ_API_KEY
+import json
 
 class NewsRecommender:
     def __init__(self):
@@ -11,7 +12,7 @@ class NewsRecommender:
         try:
             # Prepare the prompt
             articles_text = "\n\n".join([
-                f"Title: {article['title']}\nContent: {article['content']}"
+                f"Title: {article['title']}"
                 for article in articles
             ])
             
@@ -33,13 +34,34 @@ Format the response as a JSON with these keys: themes, insights, implications, r
                     {"role": "system", "content": "You are a news analyst providing insights about technology and AI news."},
                     {"role": "user", "content": prompt}
                 ],
-                model="mixtral-8x7b-32768",
+                model="llama3-70b-8192",
                 temperature=0.7,
-                max_tokens=1000
+                max_tokens=500
             )
 
             # Parse and return the analysis
-            return completion.choices[0].message.content
+            response_text = completion.choices[0].message.content
+            
+            # Try to extract JSON from the response if it's wrapped in markdown code blocks
+            if "```json" in response_text:
+                json_str = response_text.split("```json")[1].split("```")[0].strip()
+                try:
+                    return json.loads(json_str)
+                except json.JSONDecodeError:
+                    pass
+            elif "```" in response_text:
+                json_str = response_text.split("```")[1].split("```")[0].strip()
+                try:
+                    return json.loads(json_str)
+                except json.JSONDecodeError:
+                    pass
+            
+            # If we couldn't extract JSON, try to parse the entire response
+            try:
+                return json.loads(response_text)
+            except json.JSONDecodeError:
+                # If all parsing attempts fail, return the raw text
+                return response_text
         except Exception as e:
             print(f"Error analyzing articles: {str(e)}")
             return {
@@ -64,9 +86,9 @@ Please provide a concise summary focusing on the key points and implications."""
                     {"role": "system", "content": "You are a news summarizer providing concise summaries of technology and AI news."},
                     {"role": "user", "content": prompt}
                 ],
-                model="mixtral-8x7b-32768",
+                model="llama3-70b-8192",
                 temperature=0.5,
-                max_tokens=500
+                max_tokens=250
             )
 
             return completion.choices[0].message.content

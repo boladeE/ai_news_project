@@ -2,7 +2,6 @@ from pinecone import Pinecone, ServerlessSpec
 from typing import List, Dict, Any
 from config import (
     PINECONE_API_KEY,
-    PINECONE_ENVIRONMENT,
     PINECONE_INDEX_NAME,
     VECTOR_DIMENSION,
     TOP_K_RESULTS
@@ -16,13 +15,17 @@ class VectorStore:
 
     def _ensure_index(self):
         """Ensure the Pinecone index exists, create if it doesn't."""
+        # Check if index exists, create if it doesn't
         if self.index_name not in self.pinecone.list_indexes().names():
+            # Create a new index with the correct dimension
             self.pinecone.create_index(
                 name=self.index_name,
                 dimension=VECTOR_DIMENSION,
                 metric="cosine",
                 spec=ServerlessSpec(cloud="aws", region="us-east-1")
             )
+            print(f"Created new index '{self.index_name}' with dimension {VECTOR_DIMENSION}")
+        
         self.index = self.pinecone.Index(self.index_name)
 
     def upsert_articles(self, articles: List[Dict[str, Any]]) -> bool:

@@ -26,7 +26,7 @@ RSS_FEEDS = [
 ]
 
 # Vector Database Settings
-VECTOR_DIMENSION = 4096  # Cohere embedding dimension
+VECTOR_DIMENSION = 1024  # Cohere embedding dimension
 TOP_K_RESULTS = 5
 
 # Data Directories

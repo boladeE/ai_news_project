@@ -1,93 +1,106 @@
 # DS Task AI News
 
-## Project Overview
+An AI-powered news application that fetches, processes, and recommends news articles based on your interests.
 
-DS Task AI News is an AI-powered news retrieval system that gathers news articles from various online sources, stores them in a vector database, and enables users to discover relevant articles based on their interests. The system uses advanced AI techniques to find and recommend related news articles dynamically.
+## Overview
+
+DS Task AI News is a web application that uses AI technologies to fetch, analyze, and recommend news articles. The application fetches news from various RSS feeds, processes them using AI, and provides personalized insights and recommendations.
 
 ## Features
 
-* **News Aggregation** : Fetches news using RSS feeds from various online portals.
-* **Vector Database Storage** : Stores news articles in a vector database for efficient similarity searches.
-* **AI-powered Recommendations** : Uses Cohere embeddings and re-ranking to provide relevant news recommendations.
-* **LLM-powered Analysis** : Utilizes Groq for AI-driven insights and processing.
+- **Latest News**: View the latest news articles fetched from various RSS feeds.
+- **News Recommendations**: Get personalized news recommendations based on your interests.
+- **AI Insights**: Receive AI-generated insights about news articles.
+- **Article Summaries**: Get concise summaries of individual articles.
 
-## Tech Stack
+## Technologies Used
 
-* **LLM** : Groq
-* **Search** : RSS Feeds for news aggregation
-* **Embeddings & Re-Ranking** : Cohere
-* **Vector Database** : (e.g., Pinecone, Weaviate, or FAISS)
-* **Backend** : FastAPI
+- **FastAPI**: Web framework for building APIs.
+- **Jinja2**: Template engine for rendering HTML.
+- **Tailwind CSS**: Utility-first CSS framework for styling.
+- **feedparser**: Library for parsing RSS feeds.
+- **BeautifulSoup**: Library for parsing HTML.
+- **Cohere**: API for generating embeddings.
+- **Pinecone**: Vector database for storing and retrieving embeddings.
+- **Groq**: API for generating insights and summaries.
 
-## File Structure
+## Getting Started
+
+### Prerequisites
+
+- Python 3.8 or higher
+- pip (Python package manager)
+- Internet connection
+
+### Installation
+
+1. Clone the repository:
+   ```
+   git clone https://github.com/yourusername/ds_task_ai_news.git
+   cd ds_task_ai_news
+   ```
+
+2. Install the required dependencies:
+   ```
+   pip install -r requirements.txt
+   ```
+
+3. Set up the required environment variables:
+   - Create a `.env` file in the root directory with the following content:
+     ```
+     GROQ_API_KEY=your_groq_api_key
+     PINECONE_API_KEY=your_pinecone_api_key
+     PINECONE_ENVIRONMENT=your_pinecone_environment
+     PINECONE_INDEX=your_pinecone_index
+     ```
+
+4. Run the application:
+   ```
+   python backend/main.py
+   ```
+
+5. Open your web browser and navigate to `http://localhost:8000`.
+
+## Documentation
+
+- [API Documentation](docs/API_Documentation.md): Detailed documentation of the API endpoints.
+- [Technical Documentation](docs/Technical_Documentation.md): Technical details of the application architecture and components.
+- [User Guide](docs/User_Guide.md): Guide for using the application.
+
+## Project Structure
 
 ```
-DS_Task_AI_News/
-│-- backend/
-│   │-- main.py  # FastAPI backend
-│   │-- news_fetcher.py  # Fetches news using RSS feeds
-│   │-- vector_store.py  # Handles vector database operations
-│   │-- embeddings.py  # Generates embeddings using Cohere
-│   │-- recommender.py  # Fetches related news articles
-│   │-- config.py  # Configuration settings
-│   │-- requirements.txt  # Dependencies
-│
-│-- data/
-│   │-- raw_news/  # Stores raw news articles before processing
-│   │-- processed_news/  # Stores cleaned and processed articles
-│
-│-- docs/
-│   │-- README.md  # Documentation for new developers
-│   │-- API_Documentation.md  # API details
-│
-│-- .env  # Environment variables
-│-- .gitignore  # Git ignore file
-│-- LICENSE  # License information
+ds_task_ai_news/
+├── backend/
+│   ├── main.py
+│   ├── news_fetcher.py
+│   ├── embeddings.py
+│   ├── vector_store.py
+│   ├── recommender.py
+│   ├── config.py
+│   └── templates/
+│       ├── base.html
+│       ├── home.html
+│       ├── news.html
+│       └── recommendations.html
+├── data/
+│   ├── raw_news/
+│   └── processed_news/
+├── docs/
+│   ├── API_Documentation.md
+│   ├── Technical_Documentation.md
+│   └── User_Guide.md
+└── requirements.txt
 ```
 
-## Setup & Installation
+## License
 
-### 1. Clone the Repository
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-```bash
-git clone http://23.29.118.76:3000/Test/ds_task_ai_news
-cd ds-task-ai-news
-```
+## Acknowledgments
 
-### 2. Set Up the Backend
-
-```bash
-cd backend
-pip install -r requirements.txt
-python main.py
-```
-
-## Fetching News Using RSS Feeds
-
-* News is aggregated from RSS feeds of different news sources.
-* The `news_fetcher.py` script pulls data from RSS feeds, extracts relevant information, and stores it in the database.
-
-### **Example RSS Fetching Code (Python)**
-
-```python
-import feedparser
-
-def fetch_rss_news(feed_url):
-    feed = feedparser.parse(feed_url)
-    articles = []
-    for entry in feed.entries:
-        articles.append({
-            "title": entry.title,
-            "content": entry.summary,
-            "date": entry.published,
-            "slug": entry.title.lower().replace(" ", "-"),
-            "categories": ["Technology", "AI and Innovation"],
-            "tags": ["AI", "Technology", "Innovation"]
-        })
-    return articles
-```
-
-## API Endpoints
-
-* `GET /fetch-news`: Fetches news from RSS feeds.
-* `GET /recommend-news?article_id=xyz`: Retrieves similar news based on the selected article.
+- [FastAPI](https://fastapi.tiangolo.com/)
+- [Tailwind CSS](https://tailwindcss.com/)
+- [Cohere](https://cohere.ai/)
+- [Pinecone](https://www.pinecone.io/)
+- [Groq](https://groq.com/)
