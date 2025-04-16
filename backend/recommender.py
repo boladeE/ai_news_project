@@ -1,11 +1,11 @@
 from groq import Groq
-from typing import List, Dict, Any
-from config import GROQ_API_KEY
+from typing import List, Dict, Any, Optional
+from config import config
 import json
 
 class NewsRecommender:
-    def __init__(self):
-        self.client = Groq(api_key=GROQ_API_KEY)
+    def __init__(self, groq_client: Optional[Groq] = None):
+        self.client = groq_client or Groq(api_key=config.groq_api_key)
 
     def analyze_articles(self, articles: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Analyze a set of articles using Groq to generate insights."""

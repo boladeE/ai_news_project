@@ -3,12 +3,13 @@ import json
 import os
 import logging
 from datetime import datetime
-from typing import List, Dict, Any
-from config import RSS_FEEDS, RAW_NEWS_DIR, PROCESSED_NEWS_DIR
-from embeddings import EmbeddingGenerator
-from vector_store import VectorStore
+from typing import List, Dict, Any, Optional
 from bs4 import BeautifulSoup
 import re
+import time
+from config import config
+from embeddings import EmbeddingGenerator
+from vector_store import VectorStore
 
 # Configure logging
 logging.basicConfig(
@@ -22,10 +23,18 @@ logging.basicConfig(
 logger = logging.getLogger('NewsFetcher')
 
 class NewsFetcher:
-    def __init__(self):
-        self.feeds = RSS_FEEDS
-        self.embedding_generator = EmbeddingGenerator()
-        self.vector_store = VectorStore()
+    def __init__(
+        self,
+        embedding_generator: Optional[EmbeddingGenerator] = None,
+        vector_store: Optional[VectorStore] = None,
+        max_retries: int = 3,
+        retry_delay: int = 5
+    ):
+        self.feeds = config.rss_feeds
+        self.embedding_generator = embedding_generator or EmbeddingGenerator()
+        self.vector_store = vector_store or VectorStore()
+        self.max_retries = max_retries
+        self.retry_delay = retry_delay
         logger.info("NewsFetcher initialized with %d RSS feeds", len(self.feeds))
 
     def clean_html_content(self, html_content: str) -> str:
@@ -54,32 +63,52 @@ class NewsFetcher:
         return cleaned_text
 
     def fetch_rss_news(self, feed_url: str) -> List[Dict[str, Any]]:
-        """Fetch news articles from a single RSS feed."""
+        """Fetch news articles from a single RSS feed with retry logic."""
         logger.info("Fetching news from feed: %s", feed_url)
-        feed = feedparser.parse(feed_url)
         articles = []
         
-        for entry in feed.entries:
-            # Get raw content with HTML
-            raw_content = entry.get("summary", "")
-            
-            # Clean HTML content
-            clean_content = self.clean_html_content(raw_content)
-            
-            article = {
-                "title": entry.title,
-                "raw_content": raw_content,  # Store original HTML content
-                "content": clean_content,     # Store cleaned text content
-                "link": entry.get("link", ""),
-                "published": entry.get("published", datetime.now().isoformat()),
-                "source": feed.feed.get("title", "Unknown"),
-                "categories": [tag.term for tag in entry.get("tags", [])],
-                "id": entry.get("id", entry.get("link", "")),
-            }
-            articles.append(article)
-        
-        logger.info("Fetched %d articles from %s", len(articles), feed_url)
-        return articles
+        for attempt in range(self.max_retries):
+            try:
+                feed = feedparser.parse(feed_url)
+                if not feed.entries:
+                    logger.warning("No entries found in feed %s (attempt %d/%d)", 
+                                 feed_url, attempt + 1, self.max_retries)
+                    if attempt < self.max_retries - 1:
+                        time.sleep(self.retry_delay)
+                        continue
+                    return []
+                
+                for entry in feed.entries:
+                    # Get raw content with HTML
+                    raw_content = entry.get("summary", "")
+                    
+                    # Clean HTML content
+                    clean_content = self.clean_html_content(raw_content)
+                    
+                    article = {
+                        "title": entry.title,
+                        "raw_content": raw_content,  # Store original HTML content
+                        "content": clean_content,     # Store cleaned text content
+                        "link": entry.get("link", ""),
+                        "published": entry.get("published", datetime.now().isoformat()),
+                        "source": feed.feed.get("title", "Unknown"),
+                        "categories": [tag.term for tag in entry.get("tags", [])],
+                        "id": entry.get("id", entry.get("link", "")),
+                    }
+                    articles.append(article)
+                
+                logger.info("Fetched %d articles from %s", len(articles), feed_url)
+                return articles
+                
+            except Exception as e:
+                logger.error("Error fetching from %s (attempt %d/%d): %s", 
+                           feed_url, attempt + 1, self.max_retries, str(e))
+                if attempt < self.max_retries - 1:
+                    time.sleep(self.retry_delay)
+                else:
+                    logger.error("Failed to fetch from %s after %d attempts", 
+                               feed_url, self.max_retries)
+                    return []
 
     def fetch_all_news(self) -> List[Dict[str, Any]]:
         """Fetch news from all configured RSS feeds."""
@@ -87,12 +116,9 @@ class NewsFetcher:
         all_articles = []
         
         for feed_url in self.feeds:
-            try:
-                articles = self.fetch_rss_news(feed_url)
-                all_articles.extend(articles)
-                logger.info("Successfully fetched %d articles from %s", len(articles), feed_url)
-            except Exception as e:
-                logger.error("Error fetching from %s: %s", feed_url, str(e))
+            articles = self.fetch_rss_news(feed_url)
+            all_articles.extend(articles)
+            logger.info("Successfully fetched %d articles from %s", len(articles), feed_url)
         
         logger.info("Total articles fetched: %d", len(all_articles))
         return all_articles
@@ -101,7 +127,7 @@ class NewsFetcher:
         """Save raw articles to a JSON file."""
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"raw_news_{timestamp}.json"
-        filepath = os.path.join(RAW_NEWS_DIR, filename)
+        filepath = os.path.join(config.raw_news_dir, filename)
         
         logger.info("Saving %d raw articles to %s", len(articles), filepath)
         with open(filepath, "w", encoding="utf-8") as f:
@@ -114,7 +140,7 @@ class NewsFetcher:
         """Save processed articles with embeddings to a JSON file."""
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"processed_news_{timestamp}.json"
-        filepath = os.path.join(PROCESSED_NEWS_DIR, filename)
+        filepath = os.path.join(config.processed_news_dir, filename)
         
         # Create a copy of articles without raw_content for processed storage
         processed_articles = []

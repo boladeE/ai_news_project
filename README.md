@@ -55,8 +55,7 @@ DS Task AI News is a web application that uses AI technologies to fetch, analyze
      ```
 
 4. Run the application:
-   ```
-   python backend/main.py
+   ```   python backend/main.py
    ```
 
 5. Open your web browser and navigate to `http://localhost:8000`.
@@ -104,3 +103,4 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - [Cohere](https://cohere.ai/)
 - [Pinecone](https://www.pinecone.io/)
 - [Groq](https://groq.com/)
+

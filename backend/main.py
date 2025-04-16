@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
@@ -10,12 +10,19 @@ from news_fetcher import NewsFetcher
 from embeddings import EmbeddingGenerator
 from vector_store import VectorStore
 from recommender import NewsRecommender
-from config import RAW_NEWS_DIR, PROCESSED_NEWS_DIR
+from config import config
+from fastapi import HTTPException
 
 app = FastAPI(title="DS Task AI News API")
 
 # Configure templates
 templates = Jinja2Templates(directory="backend/templates")
+
+def verify_api_token(token: str):
+    if token == config.api_token:
+        print(f"API key verified: {token}")
+        return token
+    return None
 
 # Add custom filters
 def from_json(value):
@@ -51,7 +58,8 @@ async def root(request: Request):
     )
 
 @app.get("/fetch-news", response_class=HTMLResponse)
-async def fetch_news(request: Request):
+def fetch_news(request: Request, token: str = Depends(verify_api_token)):
+    # print(f"Fetching news with token: {token}")
     """Fetch news from RSS feeds and store in vector database."""
     try:
         result = news_fetcher.process()
@@ -59,11 +67,11 @@ async def fetch_news(request: Request):
             raise HTTPException(status_code=404, detail=result["message"])
         
         # Get the latest processed articles
-        processed_files = sorted(os.listdir(PROCESSED_NEWS_DIR), reverse=True)
+        processed_files = sorted(os.listdir(config.processed_news_dir), reverse=True)
         if not processed_files:
             raise HTTPException(status_code=404, detail="No processed articles found")
         
-        latest_file = os.path.join(PROCESSED_NEWS_DIR, processed_files[0])
+        latest_file = os.path.join(config.processed_news_dir, processed_files[0])
         with open(latest_file, 'r', encoding='utf-8') as f:
             articles = json.load(f)
             
@@ -81,7 +89,7 @@ async def fetch_news(request: Request):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/recommend-news", response_class=HTMLResponse)
-async def recommend_news(request: Request, article_id: str = None, query: str = None):
+async def recommend_news(request: Request, article_id: str = None, query: str = None, token: str = Depends(verify_api_token)):
     """Get news recommendations based on article ID or search query."""
     try:
         if article_id:
@@ -129,7 +137,7 @@ async def recommend_news(request: Request, article_id: str = None, query: str = 
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/article/{article_id}")
-async def get_article(article_id: str):
+async def get_article(article_id: str, token: str = Depends(verify_api_token)):
     """Get a specific article and its summary."""
     try:
         # Search for the article

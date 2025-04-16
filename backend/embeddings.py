@@ -1,10 +1,10 @@
 import cohere
-from typing import List, Dict, Any
-from config import COHERE_API_KEY
+from typing import List, Dict, Any, Optional
+from config import config
 
 class EmbeddingGenerator:
-    def __init__(self):
-        self.client = cohere.Client(COHERE_API_KEY)
+    def __init__(self, cohere_client: Optional[cohere.Client] = None):
+        self.client = cohere_client or cohere.Client(config.cohere_api_key)
 
     def generate_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Generate embeddings for a list of texts using Cohere."""
