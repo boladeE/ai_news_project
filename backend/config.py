@@ -2,16 +2,8 @@ from dataclasses import dataclass, field
 from typing import List, Optional
 import os
 from dotenv import load_dotenv
-from fastapi import HTTPException, Depends, Security
-from fastapi.security import APIKeyHeader
-from starlette.status import HTTP_403_FORBIDDEN
 
 # Load environment variables
-
-# Construct the path to the .env file
-# dotenv_path = os.path.join(os.path.dirname(__file__), '..', '.env')
-
-# Load environment variables from the specified path
 load_dotenv()
 
 @dataclass
@@ -47,26 +39,3 @@ class Config:
 # Create a global config instance
 config = Config()
 
-# API Key header
-api_key_header = APIKeyHeader(name="X-API-Token", auto_error=False)
-
-def verify_api_token(api_key: str):
-    """
-    Verify the API token from the request header.
-    
-    Args:
-        api_key: The API key from the request header
-        
-    Returns:
-        The API key if valid
-        
-    Raises:
-        HTTPException: If the API key is invalid
-    """
-    if api_key == config.api_token:
-        print(f"API key verified: {api_key}")
-        return api_key
-    raise HTTPException(
-        status_code=HTTP_403_FORBIDDEN, 
-        detail="Invalid API token"
-    )
